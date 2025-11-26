@@ -2,61 +2,119 @@ const axios = require('axios');
 const NodeCache = require('node-cache');
 const apiConfig = require('../config/apiConfig');
 const { asyncHandler, successResponse } = require('../middleware/errorHandler');
-
 const cache = new NodeCache({ stdTTL: apiConfig.cache.ttl });
 
-// Get stock overview
+const YahooFinance = require('yahoo-finance2').default;
+const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
+
 const getStockOverview = asyncHandler(async (req, res) => {
   const { symbol } = req.params;
-  const cacheKey = `overview_${symbol.toUpperCase()}`;
+  const ticker = (symbol || '').toUpperCase();
+  const cacheKey = `overview_${ticker}`;
 
-  // Check cache first
+  if (!ticker) {
+    return successResponse(res, null, 'No symbol provided', 400);
+  }
+
   const cachedData = cache.get(cacheKey);
-  if (cachedData) {
-    return successResponse(res, cachedData, 'Stock overview retrieved from cache');
+  if (cachedData) return successResponse(res, cachedData, 'Stock overview retrieved from cache');
+
+  try {
+    const summary = await yahooFinance.quoteSummary(ticker, {
+      modules: ['price', 'assetProfile', 'summaryProfile', 'defaultKeyStatistics']
+    });
+
+    if (!summary || !summary.price) {
+      throw new Error('Stock symbol not found or Yahoo returned empty data');
+    }
+
+    const price = summary.price || {};
+    const profile = summary.assetProfile || summary.summaryProfile || {};
+    const stats = summary.defaultKeyStatistics || {};
+
+    const formattedData = {
+      symbol: price.symbol || ticker,
+      name: price.shortName || price.longName || 'N/A',
+      description: profile.longBusinessSummary || 'No description available',
+      exchange: price.exchangeName || price.fullExchangeName || 'N/A',
+      sector: profile.sector || 'N/A',
+      industry: profile.industry || 'N/A',
+      marketCap: price.marketCap ?? stats.marketCap ?? null,
+      peRatio: stats.forwardPE ?? stats.trailingPE ?? null,
+      dividendYield: (stats.dividendYield != null)
+        ? (Number(stats.dividendYield) * 100).toFixed(2) + '%'
+        : (price.dividendYield != null ? (Number(price.dividendYield) * 100).toFixed(2) + '%' : null),
+      week52High: price.fiftyTwoWeekHigh ?? null,
+      week52Low: price.fiftyTwoWeekLow ?? null,
+      beta: stats.beta ?? price.beta ?? null,
+      eps: stats.trailingEps ?? null,
+      currentPrice: price.regularMarketPrice ?? price.currentPrice ?? null
+    };
+
+    cache.set(cacheKey, formattedData);
+    return successResponse(res, formattedData, 'Stock overview retrieved successfully');
+
+  } catch (err) {
+    console.error('Yahoo fetch error', err);
+    throw new Error('Failed to fetch stock data from Yahoo Finance');
   }
-
-  const response = await axios.get(`${apiConfig.alphaVantage.baseURL}/query`, {
-    params: {
-      function: 'OVERVIEW',
-      symbol: symbol.toUpperCase(),
-      apikey: apiConfig.alphaVantage.apiKey,
-    },
-  });
-
-  if (!response.data || response.data.Note) {
-    throw new Error('API rate limit exceeded. Please try again later.');
-  }
-
-  if (!response.data.Symbol) {
-    throw new Error('Stock symbol not found');
-  }
-
-  const formattedData = {
-    symbol: response.data.Symbol,
-    name: response.data.Name,
-    description: response.data.Description,
-    exchange: response.data.Exchange,
-    sector: response.data.Sector,
-    industry: response.data.Industry,
-    marketCap: response.data.MarketCapitalization,
-    peRatio: response.data.PERatio,
-    dividendYield: response.data.DividendYield,
-    week52High: response.data['52WeekHigh'],
-    week52Low: response.data['52WeekLow'],
-    beta: response.data.Beta,
-    eps: response.data.EPS,
-    currentPrice: response.data['50DayMovingAverage'],
-  };
-
-  cache.set(cacheKey, formattedData);
-  successResponse(res, formattedData, 'Stock overview retrieved successfully');
 });
 
-// Get time series data
+function computePeriod(range) {
+  const now = new Date();
+  let period2 = now;
+  let period1;
+
+  switch (range) {
+    case '1d':
+      period1 = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
+      break;
+    case '1w':
+      period1 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case '1m':
+      period1 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case '3m':
+      period1 = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    case '6m':
+      period1 = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+      break;
+    case '1y':
+      period1 = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      break;
+    case 'all':
+      period1 = new Date(now.getFullYear() - 20, now.getMonth(), now.getDate());
+      break;
+    default:
+      period1 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+  }
+
+  return [period1, period2];
+}
+
+function pickInterval(range) {
+  switch (range) {
+    case '1d': return '1m';   // 1 minute intervals
+    case '1w': return '30m';  // 30 minute intervals
+    case '1m': return '1h';   // 1 hour intervals
+    case '3m': return '1d';   // 1 day intervals
+    case '6m': return '1d';   // 1 day intervals
+    case '1y': return '1wk';  // 1 week intervals
+    case 'all': return '1mo'; // 1 month intervals
+    default: return '1d';
+  }
+}
+
 const getTimeSeries = asyncHandler(async (req, res) => {
-  const { symbol, range } = req.params;
-  const cacheKey = `timeseries_${symbol.toUpperCase()}_${range}`;
+  const { symbol, range } = req.params || {};
+  if (!symbol) return successResponse(res, null, 'No symbol provided', 400);
+
+  const ticker = symbol.toUpperCase();
+  const normalizedRange = (range || '1m').toLowerCase();
+  const cacheKey = `timeseries_${ticker}_${normalizedRange}`;
 
   // Check cache
   const cachedData = cache.get(cacheKey);
@@ -64,77 +122,47 @@ const getTimeSeries = asyncHandler(async (req, res) => {
     return successResponse(res, cachedData, 'Time series data retrieved from cache');
   }
 
-  let functionType, interval, outputSize;
-  
-  switch (range) {
-    case '1d':
-      functionType = 'TIME_SERIES_INTRADAY';
-      interval = '5min';
-      outputSize = 'compact';
-      break;
-    case '1w':
-    case '1m':
-    case '3m':
-      functionType = 'TIME_SERIES_DAILY';
-      outputSize = 'compact';
-      break;
-    case '6m':
-      functionType = 'TIME_SERIES_WEEKLY';
-      outputSize = 'compact';
-      break;
-    case '1y':
-    case 'all':
-      functionType = 'TIME_SERIES_MONTHLY';
-      outputSize = 'full';
-      break;
-    default:
-      functionType = 'TIME_SERIES_DAILY';
-      outputSize = 'compact';
+  const [period1, period2] = computePeriod(normalizedRange);
+  const interval = pickInterval(normalizedRange);
+
+  try {
+    const queryOptions = {
+      period1,
+      period2,
+      interval,
+    };
+
+    const chartData = await yahooFinance.chart(ticker, queryOptions);
+
+    if (!chartData || !chartData.quotes || chartData.quotes.length === 0) {
+      throw new Error('No chart data available for this symbol');
+    }
+
+    // Format the data from chart response
+    const formattedData = chartData.quotes.map(quote => ({
+      time: quote.date.toISOString(),
+      price: quote.close != null ? Number(quote.close) : null,
+      open: quote.open != null ? Number(quote.open) : null,
+      high: quote.high != null ? Number(quote.high) : null,
+      low: quote.low != null ? Number(quote.low) : null,
+      volume: quote.volume != null ? Number(quote.volume) : null,
+    }));
+
+    const result = {
+      symbol: ticker,
+      range: normalizedRange,
+      data: formattedData,
+    };
+
+    cache.set(cacheKey, result);
+    return successResponse(res, result, 'Time series data retrieved successfully');
+
+  } catch (err) {
+    console.error('Yahoo TimeSeries Error:', err);
+    throw new Error('Failed to fetch time series data from Yahoo Finance');
   }
-
-  const params = {
-    function: functionType,
-    symbol: symbol.toUpperCase(),
-    apikey: apiConfig.alphaVantage.apiKey,
-    outputsize: outputSize,
-  };
-
-  if (interval) {
-    params.interval = interval;
-  }
-
-  const response = await axios.get(`${apiConfig.alphaVantage.baseURL}/query`, { params });
-
-  if (!response.data || response.data.Note) {
-    throw new Error('API rate limit exceeded. Please try again later.');
-  }
-
-  const timeSeriesKey = Object.keys(response.data).find(key => key.includes('Time Series'));
-  if (!timeSeriesKey) {
-    throw new Error('Invalid response from API');
-  }
-
-  const timeSeries = response.data[timeSeriesKey];
-  const formattedData = Object.entries(timeSeries).map(([time, values]) => ({
-    time,
-    price: parseFloat(values['4. close']),
-    open: parseFloat(values['1. open']),
-    high: parseFloat(values['2. high']),
-    low: parseFloat(values['3. low']),
-    volume: parseInt(values['5. volume']),
-  })).reverse();
-
-  const result = {
-    symbol: symbol.toUpperCase(),
-    range,
-    data: formattedData,
-  };
-
-  cache.set(cacheKey, result);
-  successResponse(res, result, 'Time series data retrieved successfully');
 });
 
-// Get top gainers
 const getTopGainers = asyncHandler(async (req, res) => {
   const cacheKey = 'top_gainers';
 
@@ -215,13 +243,59 @@ const getTopLosers = asyncHandler(async (req, res) => {
   successResponse(res, formattedLosers, 'Top losers retrieved successfully');
 });
 
-// Get company logo
+
 const getCompanyLogo = asyncHandler(async (req, res) => {
-  const { domain } = req.params;
+  const { symbol } = req.params;
   
-  // Redirect to Clearbit logo API
-  const logoUrl = `${apiConfig.clearbit.logoURL}/${domain}`;
-  res.redirect(logoUrl);
+  if (!symbol) {
+    return successResponse(res, null, 'No symbol provided', 400);
+  }
+
+  const ticker = symbol.toUpperCase();
+  const cacheKey = `logo_${ticker}`;
+
+  // Check cache first
+  const cachedLogo = cache.get(cacheKey);
+  if (cachedLogo) {
+    return successResponse(res, cachedLogo, 'Company logo retrieved from cache');
+  }
+
+  try {
+    const summary = await yahooFinance.quoteSummary(ticker, {
+      modules: ['assetProfile', 'summaryProfile', 'price']
+    });
+
+    const profile = summary.assetProfile || summary.summaryProfile || {};
+    const price = summary.price || {};
+    
+    // Extract website domain from profile
+    let logoUrl = null;
+    let domain = null;
+    
+    if (profile.website) {
+      domain = profile.website
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .split('/')[0];
+      
+      logoUrl = `https://logo.clearbit.com/${domain}`;
+    }
+    
+    const result = { 
+      logoUrl,
+      domain,
+      symbol: ticker,
+      companyName: price.shortName || price.longName || profile.longName || ticker,
+      website: profile.website || null
+    };
+    
+    cache.set(cacheKey, result);
+    return successResponse(res, result, 'Company logo retrieved successfully');
+
+  } catch (err) {
+    console.error('Logo fetch error:', err);
+    throw new Error('Failed to fetch company logo from Yahoo Finance');
+  }
 });
 
 module.exports = {
