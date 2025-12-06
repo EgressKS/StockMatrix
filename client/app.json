@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "stock-app",
-    "slug": "stock-app",
+    "name": "stockmatrix-client",
+    "slug": "stockmatrix",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,13 +14,24 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.stockmatrix.stockapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.stockmatrix.stockapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0e5a50f4-bd5d-4c3a-a4ea-41bd7be9d85e"
+      }
+    },
+    "owner": "rootcircles-organization"
   }
 }

@@ -1,6 +1,16 @@
-# Stock Broking App
+ StockMatrix - Stock Broking App
 
-A production-ready mobile stock broking application built with React Native and Node.js + Express backend, integrating Alpha Vantage, Yahoo Finance, and Clearbit APIs.
+A production-ready mobile stock broking application built with React Native and Node.js + Express backend, featuring **Google OAuth 2.0 authentication**, **MongoDB database**, and real-time stock data from Yahoo Finance API.
+
+## 🎉 NEW: Authentication & Database Integration
+
+This app now includes:
+- ✅ **Google OAuth 2.0 Login** with PKCE
+- ✅ **MongoDB User Storage** with persistent watchlists
+- ✅ **JWT Authentication** (access + refresh tokens)
+- ✅ **Protected API Routes** - All endpoints require authentication
+- ✅ **User Profile Management**
+- ✅ **No API Keys Required** - Uses Yahoo Finance (free)
 
 ## Project Structure
 
@@ -43,100 +53,186 @@ A production-ready mobile stock broking application built with React Native and 
 - Loading, error, and empty states
 - Clean, modern UI matching design specifications
 
+## 📚 Documentation
+
+**Quick Links:**
+- 🚀 **[QUICKSTART.md](QUICKSTART.md)** - Get running in 5 minutes
+- 🔧 **[CONFIGURATION.md](CONFIGURATION.md)** - Configuration checklist
+- 📖 **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup instructions
+- 📝 **[API_DOCS.md](server/API_DOCS.md)** - Complete API reference
+- ✨ **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - What's been built
+- 🔄 **[AUTH_CHANGES.md](AUTH_CHANGES.md)** - Changes made
+
 ## Prerequisites
 
 - Node.js 18+ installed
-- Alpha Vantage API key (get free at https://www.alphavantage.co/support/#api-key)
+- **MongoDB Atlas account** (free tier available)
+- **Google Cloud Console project** (for OAuth)
+- WSL with Fish or Bash (for Windows users)
 
-## Setup Instructions
+## Quick Setup Instructions
 
-### 1. Backend Setup
+### 1. Run Automated Setup
 
 ```bash
-# Navigate to server directory
+# Make scripts executable
+chmod +x setup-env.sh
+
+# Run setup script (Bash/WSL)
+./setup-env.sh
+
+# Or for Fish shell
+chmod +x setup-env.fish
+./setup-env.fish
+```
+
+This will:
+- Generate secure JWT secrets
+- Create `.env` files
+- Prompt for MongoDB URI and Google Client ID
+
+### 2. Configure Google Client IDs
+
+Edit `client/src/screens/LoginScreen.js` (line 18):
+```javascript
+const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+  clientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+  androidClientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
+  iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
+});
+```
+
+### 3. Install Dependencies & Start
+
+```bash
+# Backend
 cd server
-
-# Install dependencies
 npm install
-
-# Configure environment variables
-# Edit .env file and add your Alpha Vantage API key:
-ALPHA_VANTAGE_KEY=your_actual_api_key_here
-PORT=3000
-
-# Start the server
 npm start
-```
 
-The backend will run on `http://localhost:3000`
-
-### 2. Frontend Setup
-
-```bash
-# Navigate to client directory
+# Frontend (new terminal)
 cd client
-
-# Install dependencies
 npm install
-
-# Start the app
 npm start
 ```
+
+**For detailed instructions, see [SETUP_GUIDE.md](SETUP_GUIDE.md)**
 
 ## API Endpoints
 
-### Stock Endpoints
+### Public Endpoints
+- `GET /health` - Health check
+- `POST /api/auth/google` - Login with Google OAuth
+- `POST /api/auth/refresh` - Refresh access token
+
+### Protected Endpoints (Require Authentication)
+
+**Authentication:**
+- `GET /api/auth/profile` - Get user profile
+- `PUT /api/auth/profile` - Update user profile
+- `POST /api/auth/logout` - Logout user
+
+**Stock Endpoints:**
 - `GET /api/stocks/overview/:symbol` - Get stock overview
 - `GET /api/stocks/time-series/:symbol/:range` - Get historical data
 - `GET /api/stocks/gainers` - Get top gaining stocks
 - `GET /api/stocks/losers` - Get top losing stocks
-- `GET /api/stocks/logo/:domain` - Get company logo
+- `GET /api/stocks/logo/:symbol` - Get company logo
 
-### Watchlist Endpoints
-- `GET /api/watchlist` - Get all watchlists
+**Watchlist Endpoints:**
+- `GET /api/watchlist` - Get all user watchlists
 - `POST /api/watchlist/add` - Add stock to watchlist
 - `DELETE /api/watchlist/remove/:symbol` - Remove stock from watchlist
 - `POST /api/watchlist/create` - Create new watchlist
+- `DELETE /api/watchlist/:name` - Delete watchlist
+
+**See [API_DOCS.md](server/API_DOCS.md) for detailed documentation with examples.**
 
 ## App Screens
 
-1. **Explore Screen** - Browse top gainers and losers
-2. **Product Screen** - Detailed stock information with charts
-3. **Watchlist Screen** - Manage custom watchlists
-4. **View All Screen** - Paginated stock listings with search
+1. **Login Screen** - Google OAuth authentication
+2. **Explore Screen** - Browse top gainers and losers
+3. **Product Screen** - Detailed stock information with charts
+4. **Watchlist Screen** - Manage custom watchlists
+5. **View All Screen** - Paginated stock listings with search
+6. **Profile Screen** - User profile and settings with logout
 
 ## Tech Stack
 
 ### Backend
 - Node.js & Express.js
+- **MongoDB with Mongoose** (database)
+- **JWT** (authentication)
+- **Google OAuth 2.0** (authentication)
+- Yahoo Finance API (stock data)
 - Axios (API calls)
 - Node-Cache (response caching)
-- Cheerio (web scraping)
 
 ### Frontend
 - React Native with Expo
+- **Expo Auth Session** (OAuth flow)
 - React Navigation (bottom tabs & stack)
 - Zustand (state management)
 - React Native Chart Kit (graphs)
 - React Native Modal (bottom sheets)
-- AsyncStorage (local persistence)
+- AsyncStorage (token storage)
 
 ## Environment Variables
 
-Create a `.env` file in the `server` directory:
-
+### Server (.env)
 ```env
-ALPHA_VANTAGE_KEY=your_alpha_vantage_api_key
 PORT=3000
 NODE_ENV=development
+
+# MongoDB
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/stockmatrix
+
+# Google OAuth 2.0
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+
+# JWT Secrets (generate with: openssl rand -base64 64)
+JWT_SECRET=your_long_random_secret_here
+JWT_REFRESH_SECRET=your_different_long_random_secret_here
+JWT_EXPIRES_IN=7d
 ```
 
-## Notes
+### Client (.env)
+```env
+API_BASE_URL=http://localhost:3000/api
+```
 
-- The watchlist data is stored in-memory on the backend (for demo purposes)
-- API responses are cached for 10 minutes to reduce API calls
-- The app uses Alpha Vantage's free tier API (rate limited to 5 calls/minute, 500 calls/day)
-- Company logos are fetched from Clearbit's free logo API
+**See [CONFIGURATION.md](CONFIGURATION.md) for detailed setup.**
+
+## Key Features
+
+✅ **Authentication:**
+- Google OAuth 2.0 with PKCE flow
+- JWT access and refresh tokens
+- Auto token refresh on expiry
+- Secure logout
+
+✅ **Database:**
+- MongoDB Atlas cloud database
+- User data with embedded watchlists
+- Persistent storage across sessions
+
+✅ **Security:**
+- All API routes protected with JWT
+- Token verification middleware
+- Refresh token rotation
+- MongoDB user-level data isolation
+
+✅ **Stock Data:**
+- Real-time prices from Yahoo Finance
+- No API key required
+- 10-minute response caching
+- Top gainers/losers lists
+
+✅ **User Experience:**
+- Seamless authentication flow
+- Profile management
+- Custom watchlists per user
+- Modern dark theme UI
 
 ## Images / Screenshots
 
