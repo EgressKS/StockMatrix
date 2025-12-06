@@ -7,6 +7,7 @@ import ExploreScreen from '../screens/ExploreScreen';
 import ProductScreen from '../screens/ProductScreen';
 import ViewAllScreen from '../screens/ViewAllScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -72,6 +73,15 @@ const AppNavigator = () => {
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon={focused ? "★" : "☆"} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon focused={focused} icon="👤" />
           ),
         }}
       />

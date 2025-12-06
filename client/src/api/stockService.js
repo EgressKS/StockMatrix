@@ -1,16 +1,31 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
 
-
 const DEFAULT_API_BASE_URL = 'http://localhost:3000/api';
+const ACCESS_TOKEN_KEY = '@stockmatrix_access_token';
 
 const stockAPI = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL || DEFAULT_API_BASE_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Add auth token to all requests
+stockAPI.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Stock endpoints
 export const getStockOverview = async (symbol) => {
