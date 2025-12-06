@@ -1,18 +1,22 @@
 const { asyncHandler, successResponse } = require('../middleware/errorHandler');
+const User = require('../models/User');
 
-// In-memory storage for demo purposes
-let watchlists = {
-  'Tech Giants': ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'META', 'NVDA', 'TSLA', 'NFLX', 'ADBE', 'CRM', 'ORCL', 'IBM'],
-  'Growth Stocks': ['TSLA', 'NVDA', 'SQ', 'SHOP', 'ROKU'],
-  'Dividend Payers': ['JNJ', 'PG', 'KO', 'PEP', 'MCD', 'WMT', 'VZ', 'T'],
-};
-
-// Get all watchlists
+// Get all watchlists for authenticated user
 const getAllWatchlists = asyncHandler(async (req, res) => {
-  const formattedWatchlists = Object.entries(watchlists).map(([name, stocks]) => ({
-    name,
-    stockCount: stocks.length,
-    stocks,
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const formattedWatchlists = user.watchlists.map(wl => ({
+    id: wl._id,
+    name: wl.name,
+    stockCount: wl.stocks.length,
+    stocks: wl.stocks,
+    createdAt: wl.createdAt,
   }));
 
   successResponse(res, formattedWatchlists, 'Watchlists retrieved successfully');
@@ -28,26 +32,40 @@ const addToWatchlist = asyncHandler(async (req, res) => {
     throw error;
   }
 
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
   let targetWatchlist = watchlistName;
 
   // Create new watchlist if requested
   if (createNew && watchlistName) {
-    if (!watchlists[watchlistName]) {
-      watchlists[watchlistName] = [];
+    const existingWatchlist = user.watchlists.find(wl => wl.name === watchlistName);
+    if (!existingWatchlist) {
+      user.watchlists.push({
+        name: watchlistName,
+        stocks: [],
+      });
     }
     targetWatchlist = watchlistName;
   }
 
   // Default to first watchlist if none specified
   if (!targetWatchlist) {
-    targetWatchlist = Object.keys(watchlists)[0] || 'My Favorites';
-    if (!watchlists[targetWatchlist]) {
-      watchlists[targetWatchlist] = [];
+    if (user.watchlists.length === 0) {
+      user.watchlists.push({ name: 'My Favorites', stocks: [] });
     }
+    targetWatchlist = user.watchlists[0].name;
   }
 
-  // Check if watchlist exists
-  if (!watchlists[targetWatchlist]) {
+  // Find the watchlist
+  const watchlist = user.watchlists.find(wl => wl.name === targetWatchlist);
+
+  if (!watchlist) {
     const error = new Error('Watchlist not found');
     error.statusCode = 404;
     throw error;
@@ -55,14 +73,16 @@ const addToWatchlist = asyncHandler(async (req, res) => {
 
   // Add symbol if not already present
   const upperSymbol = symbol.toUpperCase();
-  if (!watchlists[targetWatchlist].includes(upperSymbol)) {
-    watchlists[targetWatchlist].push(upperSymbol);
+  if (!watchlist.stocks.includes(upperSymbol)) {
+    watchlist.stocks.push(upperSymbol);
   }
+
+  await user.save();
 
   successResponse(res, {
     watchlistName: targetWatchlist,
     symbol: upperSymbol,
-    stocks: watchlists[targetWatchlist],
+    stocks: watchlist.stocks,
   }, 'Stock added to watchlist successfully');
 });
 
@@ -77,19 +97,31 @@ const removeFromWatchlist = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  if (!watchlists[watchlistName]) {
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const watchlist = user.watchlists.find(wl => wl.name === watchlistName);
+
+  if (!watchlist) {
     const error = new Error('Watchlist not found');
     error.statusCode = 404;
     throw error;
   }
 
   const upperSymbol = symbol.toUpperCase();
-  watchlists[watchlistName] = watchlists[watchlistName].filter(s => s !== upperSymbol);
+  watchlist.stocks = watchlist.stocks.filter(s => s !== upperSymbol);
+
+  await user.save();
 
   successResponse(res, {
     watchlistName,
     symbol: upperSymbol,
-    remainingStocks: watchlists[watchlistName],
+    remainingStocks: watchlist.stocks,
   }, 'Stock removed from watchlist successfully');
 });
 
@@ -103,17 +135,35 @@ const createWatchlist = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  if (watchlists[name]) {
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Check if watchlist already exists
+  const existingWatchlist = user.watchlists.find(wl => wl.name === name);
+  if (existingWatchlist) {
     const error = new Error('Watchlist already exists');
     error.statusCode = 409;
     throw error;
   }
 
-  watchlists[name] = [];
-
-  successResponse(res, {
+  user.watchlists.push({
     name,
     stocks: [],
+  });
+
+  await user.save();
+
+  const newWatchlist = user.watchlists[user.watchlists.length - 1];
+
+  successResponse(res, {
+    id: newWatchlist._id,
+    name: newWatchlist.name,
+    stocks: newWatchlist.stocks,
   }, 'Watchlist created successfully', 201);
 });
 
@@ -127,13 +177,24 @@ const deleteWatchlist = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  if (!watchlists[name]) {
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const watchlistIndex = user.watchlists.findIndex(wl => wl.name === name);
+
+  if (watchlistIndex === -1) {
     const error = new Error('Watchlist not found');
     error.statusCode = 404;
     throw error;
   }
 
-  delete watchlists[name];
+  user.watchlists.splice(watchlistIndex, 1);
+  await user.save();
 
   successResponse(res, {
     name,

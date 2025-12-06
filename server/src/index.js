@@ -2,11 +2,15 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const stockRoutes = require('./routes/stockRoutes');
+const connectDB = require('./config/database');
+const apiRoutes = require('./routes/index');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Connect to MongoDB
+connectDB();
 
 // Middleware
 app.use(cors());
@@ -18,10 +22,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Stock Broking API is running' });
 });
 
-// API routes
-app.use('/api', stockRoutes);
+app.use('/api', apiRoutes);
 
-// Error handling middleware (must be last)
 app.use(errorHandler);
 
 // Start server
