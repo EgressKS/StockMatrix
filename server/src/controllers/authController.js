@@ -18,9 +18,9 @@ const generateRefreshToken = (userId) => {
   });
 };
 
-// Google OAuth Login with PKCE
+// Google OAuth authentication
 const googleAuth = asyncHandler(async (req, res) => {
-  const { idToken, country } = req.body;
+  const { idToken } = req.body;
 
   if (!idToken) {
     const error = new Error('ID token is required');
@@ -40,37 +40,210 @@ const googleAuth = asyncHandler(async (req, res) => {
 
     // Find or create user
     let user = await User.findOne({ email });
+    let isNewUser = false;
 
     if (!user) {
-      // Create new user
+      // Create new user from Google data
       user = new User({
         name,
         email,
         googleId,
         profile: picture || null,
-        country: country || null,
+        authProvider: 'google',
+        profileSetupComplete: false,
       });
 
       // Create default watchlists
       user.createDefaultWatchlists();
-      await user.save();
-
-      console.log(`New user created: ${email}`);
+      isNewUser = true;
+      
+      console.log(`New user created via Google: ${email}`);
     } else {
-      // Update existing user
+      // Update existing user with Google ID if not already set
       if (!user.googleId) {
         user.googleId = googleId;
       }
       if (picture && !user.profile) {
         user.profile = picture;
       }
-      if (country && !user.country) {
-        user.country = country;
-      }
-      await user.updateLastLogin();
       
-      console.log(`User logged in: ${email}`);
+      console.log(`User logged in via Google: ${email}`);
     }
+
+    // Update last login and save
+    await user.updateLastLogin();
+
+    // Generate tokens
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // Save refresh token to user
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Return user data and tokens
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      country: user.country,
+      profile: user.profile,
+      authProvider: user.authProvider,
+      profileSetupComplete: user.profileSetupComplete,
+      watchlists: user.watchlists,
+      createdAt: user.createdAt,
+    };
+
+    successResponse(res, {
+      user: userData,
+      accessToken,
+      refreshToken,
+      isNewUser,
+    }, 'Google authentication successful', isNewUser ? 201 : 200);
+
+  } catch (error) {
+    console.error('Google auth error:', error);
+    const err = new Error('Invalid Google token or authentication failed');
+    err.statusCode = 401;
+    throw err;
+  }
+});
+
+// Complete profile setup for Google users
+const completeProfileSetup = asyncHandler(async (req, res) => {
+  const { password, country } = req.body;
+
+  if (!password) {
+    const error = new Error('Password is required to complete profile setup');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const user = await User.findById(req.user.userId);
+
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (user.profileSetupComplete && user.password) {
+    const error = new Error('Profile setup is already complete');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Update user profile
+  user.password = password;
+  user.country = country || user.country;
+  user.profileSetupComplete = true;
+
+  await user.save();
+
+  successResponse(res, {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    country: user.country,
+    profile: user.profile,
+    profileSetupComplete: user.profileSetupComplete,
+  }, 'Profile setup completed successfully');
+});
+
+// User signup
+const signup = asyncHandler(async (req, res) => {
+  const { email, password, name, country } = req.body;
+
+  // Validate required fields
+  if (!email || !password || !name) {
+    const error = new Error('Email, password, and name are required');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Check if user already exists
+  let user = await User.findOne({ email });
+
+  if (user) {
+    const error = new Error('User already exists with this email');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  // Create new user
+  user = new User({
+    name,
+    email,
+    password,
+    country: country || null,
+  });
+
+  // Create default watchlists
+  user.createDefaultWatchlists();
+  await user.save();
+
+  console.log(`New user created: ${email}`);
+
+  // Generate tokens
+  const accessToken = generateAccessToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
+
+  // Save refresh token to user
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  // Return user data and tokens
+  const userData = {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    country: user.country,
+    profile: user.profile,
+    watchlists: user.watchlists,
+    createdAt: user.createdAt,
+  };
+
+  successResponse(res, {
+    user: userData,
+    accessToken,
+    refreshToken,
+  }, 'Signup successful', 201);
+});
+
+// User login
+const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  // Validate required fields
+  if (!email || !password) {
+    const error = new Error('Email and password are required');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  try {
+    // Find user and include password field
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+      const error = new Error('Invalid email or password');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    // Compare passwords
+    const isPasswordMatch = await user.comparePassword(password);
+
+    if (!isPasswordMatch) {
+      const error = new Error('Invalid email or password');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    // Update last login
+    await user.updateLastLogin();
+
+    console.log(`User logged in: ${email}`);
 
     // Generate tokens
     const accessToken = generateAccessToken(user._id);
@@ -98,10 +271,8 @@ const googleAuth = asyncHandler(async (req, res) => {
     }, 'Login successful', 200);
 
   } catch (error) {
-    console.error('Google auth error:', error);
-    const err = new Error('Invalid Google token or authentication failed');
-    err.statusCode = 401;
-    throw err;
+    console.error('Login error:', error);
+    throw error;
   }
 });
 
@@ -198,6 +369,9 @@ const logout = asyncHandler(async (req, res) => {
 
 module.exports = {
   googleAuth,
+  completeProfileSetup,
+  signup,
+  login,
   refreshAccessToken,
   getProfile,
   updateProfile,

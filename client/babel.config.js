@@ -8,7 +8,7 @@ module.exports = function(api) {
         "path": ".env",
         "blacklist": null,
         "whitelist": null,
-        "safe": false,
+        "safe": true,
         "allowUndefined": true
       }]
     ]

@@ -1,8 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '@env';
+import { API_BASE_URL } from '../config/env';
 
-const DEFAULT_API_BASE_URL = 'http://localhost:3000/api';
+const DEFAULT_API_BASE_URL = 'https://stock-matrix-server.vercel.app/api';
 
 const authAPI = axios.create({
   baseURL: API_BASE_URL || DEFAULT_API_BASE_URL,
@@ -129,11 +129,66 @@ authAPI.interceptors.response.use(
 );
 
 // Auth API endpoints
-export const googleLogin = async (idToken, country = null) => {
+export const googleLogin = async (idToken) => {
   try {
-    const response = await authAPI.post('/auth/google', {
-      idToken,
+    const response = await authAPI.post('/auth/google', { idToken });
+    
+    const { user, accessToken, refreshToken, isNewUser } = response.data.data;
+    
+    // Save tokens and user data
+    await saveTokens(accessToken, refreshToken);
+    await saveUserData(user);
+    
+    return { ...response.data, isNewUser };
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const completeProfileSetup = async (password, country = null) => {
+  try {
+    const response = await authAPI.post('/auth/profile/setup', {
+      password,
       country,
+    });
+    
+    const { data } = response.data;
+    
+    // Update stored user data
+    await saveUserData(data);
+    
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const signup = async (name, email, password, country = null) => {
+  try {
+    const response = await authAPI.post('/auth/signup', {
+      name,
+      email,
+      password,
+      country,
+    });
+    
+    const { user, accessToken, refreshToken } = response.data.data;
+    
+    // Save tokens and user data
+    await saveTokens(accessToken, refreshToken);
+    await saveUserData(user);
+    
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const login = async (email, password) => {
+  try {
+    const response = await authAPI.post('/auth/login', {
+      email,
+      password,
     });
     
     const { user, accessToken, refreshToken } = response.data.data;

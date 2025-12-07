@@ -4,12 +4,13 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AppNavigator from './src/navigation/AppNavigator';
 import LoginScreen from './src/screens/LoginScreen';
+import ProfileSetupScreen from './src/screens/ProfileSetupScreen';
 import useAuthStore from './src/store/authStore';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  const { isAuthenticated, isLoading, initialize, user, needsProfileSetup } = useAuthStore();
 
   useEffect(() => {
     initialize();
@@ -27,6 +28,10 @@ export default function App() {
     <NavigationContainer>
       {isAuthenticated ? (
         <AppNavigator />
+      ) : needsProfileSetup ? (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} initialParams={{ user }} />
+        </Stack.Navigator>
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />

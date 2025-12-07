@@ -1,8 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '@env';
+import { API_BASE_URL } from '../config/env';
 
-const DEFAULT_API_BASE_URL = 'http://localhost:3000/api';
+const DEFAULT_API_BASE_URL = 'https://stock-matrix-server.vercel.app/api';
 const ACCESS_TOKEN_KEY = '@stockmatrix_access_token';
 
 const stockAPI = axios.create({

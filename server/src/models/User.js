@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const watchlistSchema = new mongoose.Schema({
   name: {
@@ -28,6 +29,18 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true,
   },
+  password: {
+    type: String,
+    minlength: 6,
+    select: false,
+    default: null,
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    default: null,
+  },
   country: {
     type: String,
     default: null,
@@ -36,10 +49,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
-  googleId: {
+  authProvider: {
     type: String,
-    unique: true,
-    sparse: true,
+    enum: ['email', 'google'],
+    default: 'email',
+  },
+  profileSetupComplete: {
+    type: Boolean,
+    default: false,
   },
   watchlists: [watchlistSchema],
   refreshToken: {
@@ -61,6 +78,26 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true,
 });
+
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) {
+    return next();
+  }
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Compare password method
+userSchema.methods.comparePassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 // Create default watchlists for new users
 userSchema.methods.createDefaultWatchlists = function() {

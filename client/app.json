@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "stockmatrix-client",
-    "slug": "stockmatrix",
+    "slug": "stockmatrix-app",
+    "scheme": "stockmatrix",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,9 +11,8 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.stockmatrix.stockapp",
@@ -20,18 +20,29 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+
     "android": {
       "package": "com.stockmatrix.stockapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": ["INTERNET"],
+      "versionCode": 1
     },
+
     "extra": {
+      "apiBaseUrl": "https://stock-matrix-server.vercel.app/api",
+
+      "googleWebClientId": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+      "googleAndroidClientId": "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",
+      "googleIosClientId": "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
+
       "eas": {
-        "projectId": "0e5a50f4-bd5d-4c3a-a4ea-41bd7be9d85e"
+        "projectId": "7a90a2c9-a3ef-4e3e-a3c4-625375e3d057"
       }
     },
-    "owner": "rootcircles-organization"
+
+    "plugins": []
   }
 }
