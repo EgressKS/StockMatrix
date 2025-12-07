@@ -53,8 +53,6 @@ const googleAuth = asyncHandler(async (req, res) => {
         profileSetupComplete: false,
       });
 
-      // Create default watchlists
-      user.createDefaultWatchlists();
       isNewUser = true;
       
       console.log(`New user created via Google: ${email}`);
@@ -178,8 +176,6 @@ const signup = asyncHandler(async (req, res) => {
     country: country || null,
   });
 
-  // Create default watchlists
-  user.createDefaultWatchlists();
   await user.save();
 
   console.log(`New user created: ${email}`);

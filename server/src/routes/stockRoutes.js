@@ -16,11 +16,11 @@ const {
 } = require('../controllers/watchlistController');
 
 // Stock routes
-router.get('/stocks/overview/:symbol', getStockOverview);
-router.get('/stocks/time-series/:symbol/:range', getTimeSeries);
-router.get('/stocks/gainers', getTopGainers);
-router.get('/stocks/losers', getTopLosers);
-router.get('/stocks/logo/:symbol', getCompanyLogo);
+router.get('/overview/:symbol', getStockOverview);
+router.get('/time-series/:symbol/:range', getTimeSeries);
+router.get('/gainers', getTopGainers);
+router.get('/losers', getTopLosers);
+router.get('/logo/:symbol', getCompanyLogo);
 
 // Watchlist routes
 router.get('/watchlist', getAllWatchlists);
