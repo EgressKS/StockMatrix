@@ -10,10 +10,32 @@ const StockCard = ({ stock, onPress, variant = 'grid' }) => {
     labels: [],
     datasets: [{ data: [0] }]
   });
+  const [imageError, setImageError] = useState(false);
   
   const changeColor = getPercentageColor(stock.changePercent || stock.change);
   const domain = getStockDomain(stock.symbol);
   const logoUrl = `http://localhost:3000/api/stocks/logo/${domain}`;
+  
+  const getFirstChar = () => {
+    const name = stock.name || stock.symbol;
+    return name.charAt(0).toUpperCase();
+  };
+  
+  const getLogoColor = () => {
+    const colors = [
+      '#FF6B35', // Orange
+      '#4285F4', // Blue
+      '#E91E63', // Pink
+      '#9C27B0', // Purple
+      '#00BCD4', // Cyan
+      '#4CAF50', // Green
+      '#FF9800', // Amber
+      '#F44336', // Red
+    ];
+    const char = getFirstChar();
+    const index = char.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
 
   useEffect(() => {
     fetchChartData();
@@ -62,11 +84,17 @@ const StockCard = ({ stock, onPress, variant = 'grid' }) => {
       <TouchableOpacity style={styles.listCard} onPress={onPress}>
         <View style={styles.listLeft}>
           <View style={styles.logoContainer}>
-            <Image
-              source={{ uri: logoUrl }}
-              style={styles.logo}
-              defaultSource={require('../../assets/placeholder.png')}
-            />
+            {imageError ? (
+              <View style={[styles.logoFallback, { backgroundColor: getLogoColor() }]}>
+                <Text style={styles.logoFallbackText}>{getFirstChar()}</Text>
+              </View>
+            ) : (
+              <Image
+                source={{ uri: logoUrl }}
+                style={styles.logo}
+                onError={() => setImageError(true)}
+              />
+            )}
           </View>
           <View style={styles.listInfo}>
             <Text style={styles.companyName} numberOfLines={1} ellipsizeMode="tail">
@@ -99,8 +127,8 @@ const StockCard = ({ stock, onPress, variant = 'grid' }) => {
       <View style={styles.chartContainer}>
         <LineChart
           data={chartData}
-          width={Dimensions.get('window').width * 0.42} 
-          height={60}
+          width={Dimensions.get('window').width * 0.40} 
+          height={45}
           chartConfig={chartConfig}
           bezier
           withDots={false}
@@ -132,38 +160,30 @@ const StockCard = ({ stock, onPress, variant = 'grid' }) => {
 
 const styles = StyleSheet.create({
   gridCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    minHeight: 180,
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    height: 185,
   },
   listCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(100, 60, 200, 0.3)',
   },
   cardHeader: {
-    marginBottom: 12,
-    flex: 1,
+    marginBottom: 6,
   },
   headerContent: {
-    flex: 1,
-    marginBottom: 4,
+    minHeight: 36,
   },
   listLeft: {
     flexDirection: 'row',
@@ -184,7 +204,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: 'rgba(50, 30, 80, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -194,19 +214,34 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
   },
+  logoFallback: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoFallbackText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
   companyName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
     marginBottom: 2,
+    lineHeight: 16,
   },
   symbol: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: 11,
+    color: '#999999',
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   chartContainer: {
-    height: 80,
-    marginVertical: 12,
+    height: 50,
+    marginVertical: 6,
     alignItems: 'center',
     width: '100%', 
     overflow: 'hidden', 
@@ -223,20 +258,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
   },
   price: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '700',
-    color: '#111827',
+    color: '#FFFFFF',
   },
   change: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
   changeText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
 

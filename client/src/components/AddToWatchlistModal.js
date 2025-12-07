@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Modal from 'react-native-modal';
+import { LinearGradient } from 'expo-linear-gradient';
 import useWatchlistStore from '../store/watchlistStore';
 
 const AddToWatchlistModal = ({ visible, onClose, symbol }) => {
@@ -68,7 +69,10 @@ const AddToWatchlistModal = ({ visible, onClose, symbol }) => {
       animationIn="slideInUp"
       animationOut="slideOutDown"
     >
-      <View style={styles.modalContent}>
+      <LinearGradient
+        colors={['#1a0a3e', '#2d1810']}
+        style={styles.modalContent}
+      >
         <Text style={styles.title}>Add to Watchlist</Text>
 
         <View style={styles.section}>
@@ -146,7 +150,7 @@ const AddToWatchlistModal = ({ visible, onClose, symbol }) => {
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
     </Modal>
   );
 };
@@ -157,7 +161,6 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -166,7 +169,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: '#FFFFFF',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -176,53 +179,53 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   watchlistOptions: {
     gap: 8,
   },
   watchlistOption: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   watchlistOptionSelected: {
-    backgroundColor: '#EBF5FF',
-    borderColor: '#2563EB',
+    backgroundColor: 'rgba(66, 133, 244, 0.2)',
+    borderColor: '#4285F4',
   },
   watchlistOptionText: {
     fontSize: 16,
-    color: '#374151',
+    color: '#FFFFFF',
   },
   watchlistOptionTextSelected: {
-    color: '#2563EB',
+    color: '#4285F4',
     fontWeight: '600',
   },
   checkmark: {
     fontSize: 18,
-    color: '#2563EB',
+    color: '#4285F4',
     fontWeight: '700',
   },
   noWatchlistsText: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: '#999999',
     textAlign: 'center',
     padding: 16,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    color: '#111827',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    color: '#FFFFFF',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -231,25 +234,27 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(100, 60, 200, 0.3)',
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: '#FFFFFF',
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#10B981',
+    backgroundColor: '#4285F4',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   saveButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: 'rgba(100, 100, 100, 0.5)',
     opacity: 0.5,
   },
   saveButtonText: {

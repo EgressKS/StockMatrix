@@ -9,12 +9,13 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
-import {
-  GoogleSignin,
-  statusCodes as GoogleSignInStatusCodes,
-} from '@react-native-google-signin/google-signin';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import Constants from 'expo-constants';
 import useAuthStore from '../store/authStore';
-import { GOOGLE_WEB_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID } from '../config/env';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,54 +28,42 @@ const LoginScreen = ({ navigation }) => {
   const [signupCountry, setSignupCountry] = useState('');
   const { login, signup } = useAuthStore();
 
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: Constants.expoConfig?.extra?.googleWebClientId || '',
+    redirectUrl: Google.useAuthRequestResult?.redirectUrl,
+  });
+
   useEffect(() => {
-    const configureGoogleSignIn = async () => {
-      try {
-        await GoogleSignin.configure({
-          webClientId: GOOGLE_WEB_CLIENT_ID || undefined,
-          androidClientId: GOOGLE_ANDROID_CLIENT_ID || undefined,
-          iosClientId: GOOGLE_IOS_CLIENT_ID || undefined,
-          offlineAccess: true,
-        });
-      } catch (error) {
-        console.error('Google Sign-In configuration error:', error);
-      }
-    };
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      handleGoogleSignInSuccess(id_token);
+    }
+  }, [response]);
 
-    configureGoogleSignIn();
-  }, []);
-
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignInSuccess = async (idToken) => {
     if (isLoading) return;
 
     setIsLoading(true);
     try {
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      const { idToken } = await GoogleSignin.signIn();
-
-      if (!idToken) {
-        throw new Error('Google did not return an ID token.');
-      }
-
       await login({ idToken, isGoogleAuth: true });
     } catch (error) {
-      if (error?.code === GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
-        setIsLoading(false);
-        return;
-      }
-
       console.error('Google sign-in error:', error);
-      let message = 'Unable to sign in with Google. Please try again.';
-
-      if (error?.code === GoogleSignInStatusCodes.IN_PROGRESS) {
-        message = 'Google sign-in is already in progress.';
-      } else if (error?.code === GoogleSignInStatusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        message = 'Google Play Services is unavailable or out of date.';
-      } else if (typeof error?.message === 'string' && error.message.trim().length) {
-        message = error.message;
-      }
-
+      const message = error?.message || 'Unable to sign in with Google. Please try again.';
       Alert.alert('Sign In Failed', message, [{ text: 'OK' }]);
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (isLoading) return;
+    try {
+      const result = await promptAsync();
+      if (result?.type !== 'success') {
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      Alert.alert('Sign In Failed', 'Unable to sign in with Google. Please try again.', [{ text: 'OK' }]);
       setIsLoading(false);
     }
   };
@@ -133,285 +122,329 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.logo}>📈</Text>
-          <Text style={styles.title}>StockMatrix</Text>
-          <Text style={styles.subtitle}>
-            Track stocks, manage watchlists, and stay updated with market trends
-          </Text>
-        </View>
-
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {!isSignupMode ? (
           // Login Mode
-          <View style={styles.authForm}>
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Sign In to Your Account</Text>
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>Welcome Back!</Text>
+            <Text style={styles.subtitle}>Sign in to access smart, personalized stock{'\n'}plans made for you.</Text>
 
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email address*</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#6B7280"
+                placeholder="example@gmail.com"
+                placeholderTextColor="#666"
                 value={email}
                 onChangeText={setEmail}
                 editable={!isLoading}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password*</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="#6B7280"
+                placeholder="@Sn123hsn#"
+                placeholderTextColor="#666"
                 value={password}
                 onChangeText={setPassword}
                 editable={!isLoading}
                 secureTextEntry
               />
+            </View>
 
-              <TouchableOpacity
-                style={[styles.button, isLoading && styles.buttonDisabled]}
-                onPress={handleEmailLogin}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.buttonText}>Sign In with Email</Text>
-                )}
+            <View style={styles.optionsRow}>
+              <View style={styles.rememberRow}>
+                <View style={styles.checkbox} />
+                <Text style={styles.rememberText}>Remember me</Text>
+              </View>
+              <TouchableOpacity>
+                <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>
 
+            <TouchableOpacity
+              onPress={handleEmailLogin}
+              disabled={isLoading}
+              activeOpacity={0.9}
+            >
+              <View style={[styles.signInButton, isLoading && styles.buttonDisabled]}>
+                {isLoading ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text style={styles.signInButtonText}>✦ Sign in</Text>
+                )}
+              </View>
+            </TouchableOpacity>
+
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>Or continue with</Text>
               <View style={styles.dividerLine} />
             </View>
 
             <TouchableOpacity
-              style={[styles.googleButton, isLoading && styles.buttonDisabled]}
               onPress={handleGoogleSignIn}
               disabled={isLoading}
+              activeOpacity={0.9}
             >
-              <Text style={styles.googleIcon}>G</Text>
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
+              <View style={[styles.googleButton, isLoading && styles.buttonDisabled]}>
+                <Text style={styles.googleIcon}>G</Text>
+                <Text style={styles.googleButtonText}>Google</Text>
+              </View>
             </TouchableOpacity>
 
-            <View style={styles.footer}>
+            <View style={styles.signupSection}>
               <Text style={styles.footerText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => setIsSignupMode(true)} disabled={isLoading}>
-                <Text style={styles.linkText}>Create one</Text>
+                <Text style={styles.signupLink}>Sign up</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
           // Signup Mode
-          <View style={styles.authForm}>
-            <Text style={styles.sectionTitle}>Create Your Account</Text>
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>Create Your Account</Text>
+            <Text style={styles.subtitle}>Create your account to explore exciting stock{'\n'}destinations and adventures.</Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name *"
-              placeholderTextColor="#6B7280"
-              value={signupName}
-              onChangeText={setSignupName}
-              editable={!isLoading}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Email *"
-              placeholderTextColor="#6B7280"
-              value={email}
-              onChangeText={setEmail}
-              editable={!isLoading}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password (min. 6 characters) *"
-              placeholderTextColor="#6B7280"
-              value={signupPassword}
-              onChangeText={setSignupPassword}
-              editable={!isLoading}
-              secureTextEntry
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm Password *"
-              placeholderTextColor="#6B7280"
-              value={signupConfirmPassword}
-              onChangeText={setSignupConfirmPassword}
-              editable={!isLoading}
-              secureTextEntry
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Country (Optional)"
-              placeholderTextColor="#6B7280"
-              value={signupCountry}
-              onChangeText={setSignupCountry}
-              editable={!isLoading}
-            />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Full Name*</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Alex Smith"
+                placeholderTextColor="#666"
+                value={signupName}
+                onChangeText={setSignupName}
+                editable={!isLoading}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email address*</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="example@gmail.com"
+                placeholderTextColor="#666"
+                value={email}
+                onChangeText={setEmail}
+                editable={!isLoading}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password*</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="@Sn123hsn#"
+                placeholderTextColor="#666"
+                value={signupPassword}
+                onChangeText={setSignupPassword}
+                editable={!isLoading}
+                secureTextEntry
+              />
+            </View>
 
             <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
               onPress={handleSignup}
               disabled={isLoading}
+              activeOpacity={0.9}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Create Account</Text>
-              )}
+              <View style={[styles.signInButton, isLoading && styles.buttonDisabled]}>
+                {isLoading ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text style={styles.signInButtonText}>✦ Register</Text>
+                )}
+              </View>
             </TouchableOpacity>
 
-            <View style={styles.footer}>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>Or continue with</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              onPress={handleGoogleSignIn}
+              disabled={isLoading}
+              activeOpacity={0.9}
+            >
+              <View style={[styles.googleButton, isLoading && styles.buttonDisabled]}>
+                <Text style={styles.googleIcon}>G</Text>
+                <Text style={styles.googleButtonText}>Google</Text>
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.signupSection}>
               <Text style={styles.footerText}>Already have an account? </Text>
               <TouchableOpacity onPress={() => setIsSignupMode(false)} disabled={isLoading}>
-                <Text style={styles.linkText}>Sign in</Text>
+                <Text style={styles.signupLink}>Sign in</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
-
-        <Text style={styles.terms}>
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0E27',
+    backgroundColor: '#000000',
+    position: 'relative',
   },
-  content: {
-    padding: 24,
-    paddingTop: 40,
-    paddingBottom: 40,
+  scrollView: {
+    flex: 1,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 40,
   },
-  logo: {
-    fontSize: 60,
-    marginBottom: 16,
+  formContainer: {
+    paddingHorizontal: 30,
+    maxWidth: 450,
+    width: '100%',
+    alignSelf: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: 6,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
-    color: '#8B92B2',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  authForm: {
+    fontSize: 12,
+    color: '#999',
     marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 18,
   },
-  formSection: {
-    marginBottom: 20,
+  inputGroup: {
+    marginBottom: 14,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  label: {
+    fontSize: 12,
     color: '#fff',
-    marginBottom: 16,
+    marginBottom: 6,
+    fontWeight: '500',
   },
   input: {
-    backgroundColor: '#1A1F3A',
+    backgroundColor: '#333333',
     borderRadius: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 12,
     color: '#fff',
+    fontSize: 14,
     borderWidth: 1,
-    borderColor: '#2D3347',
-    fontSize: 16,
+    borderColor: '#555555',
   },
-  button: {
-    backgroundColor: '#4285F4',
+  optionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#444',
+    marginRight: 8,
+  },
+  rememberText: {
+    fontSize: 13,
+    color: '#999',
+  },
+  forgotText: {
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  signInButton: {
+    backgroundColor: '#E50914',
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#4285F4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    marginBottom: 18,
   },
   buttonDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
-  buttonText: {
-    fontSize: 17,
-    fontWeight: '600',
+  signInButtonText: {
+    fontSize: 15,
+    fontWeight: 'bold',
     color: '#fff',
+    letterSpacing: 0.5,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24,
+    marginVertical: 18,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#2D3347',
+    backgroundColor: '#2A2A2A',
   },
   dividerText: {
-    color: '#6B7280',
-    marginHorizontal: 12,
-    fontSize: 14,
+    color: '#666',
+    marginHorizontal: 14,
+    fontSize: 11,
   },
   googleButton: {
-    backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#ffffff',
     paddingVertical: 14,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 18,
   },
   googleIcon: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#4285F4',
-    marginRight: 8,
+    marginRight: 10,
   },
   googleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#000000',
+    letterSpacing: 0.5,
   },
-  footer: {
+  signupSection: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 4,
   },
   footerText: {
-    color: '#8B92B2',
-    fontSize: 14,
-  },
-  linkText: {
-    color: '#4285F4',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  terms: {
+    color: '#666',
     fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 18,
+  },
+  signupLink: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

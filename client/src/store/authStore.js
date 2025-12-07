@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import {
   googleLogin,
-  login: loginService,
-  signup: signupService,
+  signup as signupService,
+  login as loginService,
   logout as logoutService,
   getProfile,
   updateProfile as updateProfileService,

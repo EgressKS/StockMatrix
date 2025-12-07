@@ -32,7 +32,7 @@
     },
 
     "extra": {
-      "apiBaseUrl": "https://stock-matrix-server.vercel.app/api",
+      "apiBaseUrl": "http://172.70.99.19:3000/api",
 
       "googleWebClientId": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
       "googleAndroidClientId": "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",

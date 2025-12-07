@@ -7,8 +7,10 @@ import {
   ScrollView,
   Image,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import useAuthStore from '../store/authStore';
 
 const ProfileScreen = ({ navigation }) => {
@@ -32,8 +34,14 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView}>
+    <LinearGradient
+      colors={['#000000', '#1a0a3e', '#000000', '#2d1810']}
+      locations={[0, 0.3, 0.6, 1]}
+      style={styles.gradientContainer}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
         </View>
@@ -150,32 +158,39 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>Version 1.0.0</Text>
-      </ScrollView>
-    </SafeAreaView>
+          <Text style={styles.version}>Version 1.0.0</Text>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#0A0E27',
   },
   scrollView: {
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 1.2,
+    textAlign:'center'
   },
   profileCard: {
-    backgroundColor: '#151B3B',
-    marginHorizontal: 20,
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    borderWidth: 1,
+    marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 24,
     borderRadius: 16,
@@ -191,7 +206,7 @@ const styles = StyleSheet.create({
     borderRadius: 35,
   },
   avatarPlaceholder: {
-    backgroundColor: '#4285F4',
+    backgroundColor: '#E91E63',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -225,10 +240,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#8B92B2',
+    color: '#999999',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginBottom: 12,
   },
   menuItem: {
@@ -236,9 +251,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: '#151B3B',
-    marginHorizontal: 20,
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    borderWidth: 1,
+    marginHorizontal: 16,
     marginBottom: 2,
+    borderRadius: 12,
   },
   menuItemIcon: {
     fontSize: 20,
@@ -256,8 +274,10 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#151B3B',
-    marginHorizontal: 20,
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    borderWidth: 1,
+    marginHorizontal: 16,
     borderRadius: 12,
     padding: 20,
   },
@@ -267,7 +287,7 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    backgroundColor: '#1E2542',
+    backgroundColor: 'rgba(100, 60, 200, 0.3)',
   },
   statValue: {
     fontSize: 24,
@@ -280,8 +300,8 @@ const styles = StyleSheet.create({
     color: '#8B92B2',
   },
   logoutButton: {
-    backgroundColor: '#DC2626',
-    marginHorizontal: 20,
+    backgroundColor: '#E91E63',
+    marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 24,
     paddingVertical: 16,
@@ -291,11 +311,11 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#FFFFFF',
   },
   version: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#888888',
     textAlign: 'center',
     marginBottom: 32,
   },

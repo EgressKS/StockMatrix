@@ -25,15 +25,12 @@ const WatchlistCard = ({ watchlist, onPress, onMenuPress }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
   },
   content: {
     flexDirection: 'row',
@@ -42,20 +39,20 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: '700',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   stockCount: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#999999',
   },
   menuButton: {
     padding: 8,
   },
   menuIcon: {
     fontSize: 24,
-    color: '#6B7280',
+    color: '#FFFFFF',
     fontWeight: '700',
   },
 });

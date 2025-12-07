@@ -8,10 +8,37 @@ import {
   ActivityIndicator,
   RefreshControl,
   TextInput,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import StockCard from '../components/StockCard';
 import { getTopGainers, getTopLosers } from '../api/stockService';
+
+const SearchIcon = () => (
+  <View style={{ width: 24, height: 24 }}>
+    <View style={{
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      borderWidth: 2.5,
+      borderColor: '#FFFFFF',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+    }} />
+    <View style={{
+      width: 8,
+      height: 2.5,
+      backgroundColor: '#FFFFFF',
+      transform: [{ rotate: '45deg' }],
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+    }} />
+  </View>
+);
 
 const ExploreScreen = () => {
   const navigation = useNavigation();
@@ -89,36 +116,44 @@ const ExploreScreen = () => {
   }
 
   return (
-    <ScrollView
+    <LinearGradient
+      colors={['#000000', '#1a0a3e', '#000000', '#2d1810']}
+      locations={[0, 0.3, 0.6, 1]}
       style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
     >
-      <View style={styles.header}>
-        <Text style={styles.appName}>Stock App</Text>
-        {isSearchActive ? (
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search stocks..."
-              value={searchText}
-              onChangeText={setSearchText}
-              onSubmitEditing={handleSearchSubmit}
-              autoFocus={true}
-            />
-            <TouchableOpacity onPress={handleSearchClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Text style={styles.appName}>📊 StockMatrix</Text>
+          {isSearchActive ? (
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search stocks..."
+                value={searchText}
+                onChangeText={setSearchText}
+                onSubmitEditing={handleSearchSubmit}
+                autoFocus={true}
+              />
+              <TouchableOpacity onPress={handleSearchClose} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={handleSearchPress} style={styles.searchIconButton}>
+              <SearchIcon />
             </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity onPress={handleSearchPress}>
-            <Text style={styles.searchIcon}>🔍︎</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+          )}
+        </View>
 
-      <View style={styles.horizontalLine} />
+        <View style={styles.horizontalLine} />
+
+        <ScrollView
+          style={styles.scrollView}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
 
       {/* Top Gainers Section */}
       <View style={styles.section}>
@@ -170,78 +205,90 @@ const ExploreScreen = () => {
 
         
       </View>
-    </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    paddingTop: 40,
+    paddingHorizontal: 18,
+    paddingTop: 28,
+    paddingBottom: 12,
   },
   appName: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#111827',
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
-  searchIcon: {
-    fontSize: 24,
+  searchIconButton: {
+    padding: 6,
   },
   horizontalLine: {
     height: 1,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 20,
+    backgroundColor: 'rgba(196, 185, 224, 0.3)',
+    marginHorizontal: 16,
+    marginTop: 4,
   },
   section: {
     marginBottom: 24,
+    marginTop: 8,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    marginTop:10,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: '#FFFFFF',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: 10,
+    gap: 8,
   },
   gridItem: {
     width: '48%',
   },
   viewAllButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
     borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 20,
+    padding: 14,
+    marginHorizontal: 16,
     marginTop: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(100, 60, 200, 0.3)',
   },
   viewAllText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#374151',
+    color: '#FFFFFF',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -252,19 +299,23 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 40,
-    borderColor: '#E5E7EB',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    marginRight: 3,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    marginRight: 8,
+    color: '#FFFFFF',
+    placeholderTextColor: '#888888',
   },
   closeButton: {
     padding: 8,
   },
   closeButtonText: {
     fontSize: 18,
-    color: '#374151',
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });
 

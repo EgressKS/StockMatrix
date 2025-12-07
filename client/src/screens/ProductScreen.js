@@ -6,7 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import ChartView from '../components/ChartView';
 import AddToWatchlistModal from '../components/AddToWatchlistModal';
@@ -15,6 +18,29 @@ import { formatCurrency, formatPercentage, formatNumber, getPercentageColor } fr
 import useWatchlistStore from '../store/watchlistStore';
 
 const TIME_RANGES = ['1D', '1W', '1M', '3M', '6M', '1Y', 'ALL'];
+
+const BackArrowIcon = () => (
+  <View style={{ width: 24, height: 24, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{
+      width: 0,
+      height: 0,
+      borderRightWidth: 10,
+      borderTopWidth: 7,
+      borderBottomWidth: 7,
+      borderRightColor: '#FFFFFF',
+      borderTopColor: 'transparent',
+      borderBottomColor: 'transparent',
+    }} />
+  </View>
+);
+
+const MenuIcon = () => (
+  <View style={{ width: 24, height: 24, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{ width: 18, height: 2, backgroundColor: '#FFFFFF', marginBottom: 4 }} />
+    <View style={{ width: 18, height: 2, backgroundColor: '#FFFFFF', marginBottom: 4 }} />
+    <View style={{ width: 18, height: 2, backgroundColor: '#FFFFFF' }} />
+  </View>
+);
 
 const ProductScreen = () => {
   const route = useRoute();
@@ -94,18 +120,27 @@ const ProductScreen = () => {
     : 0;
 
   return (
-    <View style={styles.container}>
-      <ScrollView>
+    <LinearGradient
+      colors={['#000000', '#1a0a3e', '#000000', '#2d1810']}
+      locations={[0, 0.3, 0.6, 1]}
+      style={styles.container}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>←</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <BackArrowIcon />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Details Screen</Text>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
             <Text style={styles.bookmarkIcon}>{isInWatchlist ? '★' : '☆'}</Text>
           </TouchableOpacity>
         </View>
+
+      <View style={styles.horizontalLine} />
+
 
         {/* Stock Info */}
         <View style={styles.stockInfo}>
@@ -197,51 +232,61 @@ const ProductScreen = () => {
             </View>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
 
-      <AddToWatchlistModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        symbol={symbol}
-      />
-    </View>
+        <AddToWatchlistModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          symbol={symbol}
+        />
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+  },
+  safeArea: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
   },
   errorText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingTop: 32,
+    paddingBottom:5,
+    
+  },
+  horizontalLine: {
+    height: 1,
+    backgroundColor: 'rgba(81, 81, 193, 0.3)',
+    marginHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 12,
   },
   backButton: {
-    fontSize: 28,
-    color: '#111827',
+    padding: 4,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: '#FFFFFF',
   },
   bookmarkIcon: {
-    fontSize: 28,
-    color: '#111827',
+    fontSize: 24,
+    color: '#FF6B35',
   },
   stockInfo: {
     flexDirection: 'row',
@@ -253,7 +298,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: 'rgba(50, 30, 80, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -261,7 +306,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#FFFFFF',
   },
   stockDetails: {
     flex: 1,
@@ -269,11 +314,11 @@ const styles = StyleSheet.create({
   companyName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: '#FFFFFF',
   },
   stockSymbol: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#999999',
     marginTop: 2,
   },
   priceInfo: {
@@ -282,7 +327,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#10B981',
+    color: '#FFFFFF',
   },
   change: {
     fontSize: 14,
@@ -301,12 +346,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   rangeButtonActive: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4285F4',
   },
   rangeText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#888888',
   },
   rangeTextActive: {
     color: '#FFFFFF',
@@ -316,15 +361,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: '#FFFFFF',
     marginBottom: 12,
   },
   description: {
     fontSize: 14,
     lineHeight: 20,
-    color: '#6B7280',
+    color: '#CCCCCC',
     marginBottom: 16,
   },
   infoRow: {
@@ -333,19 +378,21 @@ const styles = StyleSheet.create({
   },
   infoItem: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    borderWidth: 1,
     padding: 12,
     borderRadius: 12,
   },
   infoLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#999999',
     marginBottom: 4,
   },
   infoValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: '#FFFFFF',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -354,25 +401,23 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '48%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    borderWidth: 1,
     padding: 16,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
   },
   statLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#999999',
     marginBottom: 4,
   },
   statValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: '#FFFFFF',
   },
+
 });
 
 export default ProductScreen;

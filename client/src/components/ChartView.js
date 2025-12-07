@@ -35,12 +35,12 @@ const ChartView = ({ data, range }) => {
         width={screenWidth - 32}
         height={220}
         chartConfig={{
-          backgroundColor: '#FFFFFF',
-          backgroundGradientFrom: '#FFFFFF',
-          backgroundGradientTo: '#FFFFFF',
+          backgroundColor: 'transparent',
+          backgroundGradientFrom: 'transparent',
+          backgroundGradientTo: 'transparent',
           decimalPlaces: 2,
           color: (opacity = 1) => chartColor,
-          labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+          labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
           style: {
             borderRadius: 16,
           },
@@ -70,10 +70,12 @@ const ChartView = ({ data, range }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
     borderRadius: 16,
     padding: 16,
     marginVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(100, 60, 200, 0.3)',
   },
   chart: {
     marginVertical: 8,
@@ -83,13 +85,15 @@ const styles = StyleSheet.create({
     height: 220,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
     borderRadius: 16,
     marginVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(100, 60, 200, 0.3)',
   },
   emptyText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#FFFFFF',
   },
 });
 

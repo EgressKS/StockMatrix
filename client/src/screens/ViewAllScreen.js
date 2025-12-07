@@ -7,10 +7,28 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import StockCard from '../components/StockCard';
 import { getTopGainers, getTopLosers, getStockOverview } from '../api/stockService';
+
+const BackArrowIcon = () => (
+  <View style={{ width: 24, height: 24, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{
+      width: 0,
+      height: 0,
+      borderRightWidth: 10,
+      borderTopWidth: 7,
+      borderBottomWidth: 7,
+      borderRightColor: '#FFFFFF',
+      borderTopColor: 'transparent',
+      borderBottomColor: 'transparent',
+    }} />
+  </View>
+);
 
 const ViewAllScreen = () => {
   const route = useRoute();
@@ -95,14 +113,19 @@ const ViewAllScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>←</Text>
+    <LinearGradient
+      colors={['#000000', '#1a0a3e', '#000000', '#2d1810']}
+      locations={[0, 0.3, 0.6, 1]}
+      style={styles.container}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <SafeAreaView style={styles.safeArea}>
+        {/* Header */}
+        <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <BackArrowIcon />
         </TouchableOpacity>
         <Text style={styles.title}>{getTitle()}</Text>
-        <View style={{ width: 28 }} />
       </View>
 
       {/* Search and Filter */}
@@ -142,32 +165,39 @@ const ViewAllScreen = () => {
           )}
         </ScrollView>
       )}
-
-      
-    </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
-    // justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 36,
+    paddingBottom: 20,
   },
   backButton: {
-    fontSize: 28,
-    color: '#111827',
+    position: 'absolute',
+    left: 16,
+    top: 36,
+    padding: 4,
+    zIndex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: '#FFFFFF',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -179,24 +209,22 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
   },
   searchIcon: {
     marginRight: 8,
     fontSize: 16,
+    color: '#FFFFFF',
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#111827',
+    color: '#FFFFFF',
   },
   filterButton: {
     backgroundColor: '#FFFFFF',
@@ -232,7 +260,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#FFFFFF',
   },
   pagination: {
     flexDirection: 'row',

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Modal from 'react-native-modal';
+import { LinearGradient } from 'expo-linear-gradient';
 import { createWatchlist } from '../api/stockService';
 import useWatchlistStore from '../store/watchlistStore';
 
@@ -51,7 +52,10 @@ const CreateWatchlistModal = ({ visible, onClose }) => {
       animationIn="slideInUp"
       animationOut="slideOutDown"
     >
-      <View style={styles.modalContent}>
+      <LinearGradient
+        colors={['#1a0a3e', '#2d1810']}
+        style={styles.modalContent}
+      >
         <Text style={styles.title}>Create New Watchlist</Text>
 
         <View style={styles.section}>
@@ -87,7 +91,7 @@ const CreateWatchlistModal = ({ visible, onClose }) => {
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
     </Modal>
   );
 };
@@ -98,7 +102,6 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: '#FFFFFF',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -117,17 +120,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    color: '#111827',
+    borderColor: 'rgba(100, 60, 200, 0.3)',
+    color: '#FFFFFF',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -136,19 +139,21 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: 'rgba(30, 20, 60, 0.6)',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(100, 60, 200, 0.3)',
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: '#FFFFFF',
   },
   createButton: {
     flex: 1,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#FF6B35',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
